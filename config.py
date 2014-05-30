@@ -4,11 +4,11 @@ _CFGFILE = 'config.cfg'
 
 _DEFAULTS = {
             'main': {
-                        'data_dir': '/mnt',
+                        'data_dir': './in',
                         'output_dir': './out',
                         },
             'advanced': {
-                         'avconv_args': '-c:v copy',
+                         'avconv_args': '-c:v copy -v error',
                          'db_file': 'index.db',
                          'h_index_file': 'index00.bin',
                          },

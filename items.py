@@ -27,10 +27,12 @@ class IndexFile:
             self._sections = []
             cur_sec = CurrentSection.make(self)
             cur_idx = cur_sec.idx
-            for idx in range(cur_idx):
-                sec = Section.make(self, idx)
-                self._sections.append(sec)
-            self.sections.append(cur_sec)
+            # CurrentSection has ffff in idx field in vanilla index
+            if cur_idx != 0xffff:
+                for idx in range(cur_idx):
+                    sec = Section.make(self, idx)
+                    self._sections.append(sec)
+                self.sections.append(cur_sec)
         return self._sections
     
     def __getattr__(self, attr):
@@ -51,8 +53,8 @@ class Item:
             start = cls.start
         f.seek(start + idx*cls.size)
         LOG.debug('Making {} at {}:{:x}'.format(cls.__name__,
-                                              f.name,
-                                              f.tell()))
+                                                f.name,
+                                                f.tell()))
         buf = f.read(cls.size)
         fields = struct.unpack(cls.fmt, buf)
         return cls(f, *fields)
@@ -89,7 +91,7 @@ class Section(Item):
             self._video_records = []
             for idx in range(VideoRecord.max_items):
                 start = VideoRecord.start\
-                        + VideoRecord.max_items*VideoRecord.size
+                        + VideoRecord.max_items * VideoRecord.size * self.idx
                 vrec = VideoRecord.make(self.h_idx_file, idx, start)
                 if vrec.end_dt == EPOCH:
                     # Record either in progress or not initialized

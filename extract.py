@@ -25,7 +25,9 @@ def extract(datadir, section, video_record):
     in_fpath = os.path.join(cfg['main']['data_dir'],
                             datadir,
                             'hiv{:05d}.mp4'.format(section.idx))
-    cmd = ['avconv', '-v', 'error', '-i', '-', '-c:v', 'copy', out_fpath]
+    cmd = ['avconv', '-i', '-']
+    cmd.extend(cfg['advanced']['avconv_args'].split())
+    cmd.append(out_fpath)
     
     LOG.info('Extracting video record from'
              ' {:%Y-%m-%d_%H:%M:%S}'.format(start_dt))

@@ -1,4 +1,6 @@
+from collections import defaultdict
 from itertools import chain, islice
+import json
 import struct
 
 
@@ -22,3 +24,4 @@ def log_short(s):
 def log_int(i):
     p = struct.pack('<I', i)
     return ''.join('{:02x}'.format(b) for b in p)
+    
