@@ -25,7 +25,7 @@ class Parser():
             self.update_datadir(datadir)
         
     def update_datadir(self, datadir):
-        LOG.debug('Entering {}'.format(datadir))
+        LOG.info('Entering {}'.format(datadir))
         
         h_idx_path = os.path.join(cfg['main']['data_dir'],
                                   datadir,
@@ -33,10 +33,10 @@ class Parser():
         idx_file = items.IndexFile(h_idx_path)
 
         # Skip if revision has not changed
-        LOG.debug('Index revision is {}'.format(idx_file.header.revision))
+        LOG.info('Index revision is {}'.format(idx_file.header.revision))
         db_dir_entry = self._db['datadirs'][datadir]
         if db_dir_entry['revision'] == idx_file.header.revision:
-            LOG.debug('Revision unchanged, nothing to update')
+            LOG.info('Revision unchanged, nothing to update')
             return
         
         cur_sec_idx = db_dir_entry['cur_section']
@@ -56,8 +56,10 @@ class Parser():
                     db_dir_entry['last_vrec'] = next_vrec_idx + i
                     self.save_db()
                 except FileExistsError as e:
-                    LOG.debug('File {} exists, will not overwrite'\
+                    LOG.info('File {} exists, will not overwrite'\
                               .format(e.filename))
+                    
+        LOG.info('Done processing revision {}'.format(idx_file.header.revision))
         db_dir_entry['revision'] = idx_file.header.revision
         self.save_db()
                     

@@ -27,7 +27,7 @@ class IndexFile:
             self._sections = []
             cur_sec = CurrentSection.make(self)
             cur_idx = cur_sec.idx
-            # CurrentSection has ffff in idx field in vanilla index
+            # CurrentSection has ffff in idx field in a vanilla index
             if cur_idx != 0xffff:
                 for idx in range(cur_idx):
                     sec = Section.make(self, idx)
