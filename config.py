@@ -21,13 +21,13 @@ class CFG(configparser.ConfigParser):
         self.configure()
         
     def configure(self, cfgfile=_CFGFILE):
-        self._read_defaults()
+        self._load_defaults()
         self._read_file(cfgfile)
         
     def save(self, cfgfile=_CFGFILE):
         self._write_file(cfgfile)
 
-    def _read_defaults(self):
+    def _load_defaults(self):
         self.read_dict(_DEFAULTS)
     
     def _read_file(self, cfgfile):

@@ -1,5 +1,12 @@
-from datetime import datetime, timezone, _EPOCH
+from datetime import datetime as dt
+import logging
 import struct
+
+import utils as u
+
+
+LOG = logging.getLogger(__name__)
+EPOCH = dt.utcfromtimestamp(0)
 
 
 class IndexFile:
@@ -34,12 +41,21 @@ class IndexFile:
             
 
 class Item:
+    def __init__(self, h_idx_file, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.h_idx_file = h_idx_file
+    
     @classmethod
-    def make(cls, f, idx=0):
-        f.seek(cls.start + idx*cls.size)
+    def make(cls, f, idx=0, start=None):
+        if start is None:
+            start = cls.start
+        f.seek(start + idx*cls.size)
+        LOG.debug('Making {} at {}:{:x}'.format(cls.__name__,
+                                              f.name,
+                                              f.tell()))
         buf = f.read(cls.size)
         fields = struct.unpack(cls.fmt, buf)
-        return cls(*fields)
+        return cls(f, *fields)
     
 
 class Header(Item):
@@ -48,21 +64,23 @@ class Header(Item):
     size = 16
     max_items = 1
 
-    def __init__(self, revision, *args, **kwargs):
+    def __init__(self, h_idx_file, revision, *args, **kwargs):
+        super().__init__(h_idx_file, *args, **kwargs)
         self.revision = revision
-        super().__init__(*args, **kwargs)
         
         
 class Section(Item):
-    fmt = '<H 6x <I <I 16x'
+    fmt = '<H 6x I I 16x'
     start = 0x500
     size = 32
     max_items = 149
 
-    def __init__(self, idx, start_datetime, end_datetime):
+    def __init__(self, h_idx_file, idx, start_ts, end_ts,
+                 *args, **kwargs):
+        super().__init__(h_idx_file, *args, **kwargs)
         self.idx = idx
-        self.start_datetime = start_datetime
-        self.end_datetime = end_datetime
+        self.start_dt = dt.utcfromtimestamp(start_ts)
+        self.end_dt = dt.utcfromtimestamp(end_ts)
         self._video_records = None
         
     @property
@@ -70,8 +88,10 @@ class Section(Item):
         if self._video_records is None:
             self._video_records = []
             for idx in range(VideoRecord.max_items):
-                vrec = VideoRecord.make(self, idx)
-                if vrec.end_time == _EPOCH:
+                start = VideoRecord.start\
+                        + VideoRecord.max_items*VideoRecord.size
+                vrec = VideoRecord.make(self.h_idx_file, idx, start)
+                if vrec.end_dt == EPOCH:
                     # Record either in progress or not initialized
                     break
                 self._video_records.append(vrec)
@@ -79,30 +99,27 @@ class Section(Item):
         
         
 class CurrentSection(Section):
-    fmt = '<H 2x <I <I 4x'
+    fmt = '<H 2x I I 4x'
     start = 0x30
     size = 16
     max_items = 1
         
 
 class Record(Item):
-    def __init__(self, start_offset, length, *args, **kwargs):
+    def __init__(self, h_idx_file, start_offset, end_offset, *args, **kwargs):
+        super().__init__(h_idx_file, *args, **kwargs)
         self.start_offset = start_offset
-        self.length = length
-        super().__init__(*args, **kwargs)
+        self.length = end_offset - start_offset
         
         
 class VideoRecord(Record):
-    fmt = '8x <I 4x <I 20x <I <I 32x'
+    fmt = '8x I 4x I 20x I I 32x'
     start = 0x17a0
     size = 80
     max_items = 256
 
-    def __init__(self, start_datetime, end_datetime, *args, **kwargs):
-        self.start_datetime = self.parse_timestamp(start_datetime)
-        self.end_datetime = self.parse_timestamp(end_datetime)
-        super().__init__(*args, **kwargs)
-        
-    @classmethod
-    def parse_timestamp(cls, timestamp):
-        return datetime.fromtimestamp(timestamp, timezone.utc)
+    def __init__(self, h_idx_file, start_dt, end_dt,
+                 *args, **kwargs):
+        super().__init__(h_idx_file, *args, **kwargs)
+        self.start_dt = dt.utcfromtimestamp(start_dt)
+        self.end_dt = dt.utcfromtimestamp(end_dt)
