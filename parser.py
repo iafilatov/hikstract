@@ -16,12 +16,15 @@ class Parser():
     _dbfile = cfg['advanced']['db_file']
     
     def __init__(self):
-        self.read_db()
+        self._read_db()
         
     def update(self):
-        for datadir in os.listdir(cfg['main']['data_dir']):
-            if not datadir.startswith('datadir'):
-                continue
+        get_idx = lambda dir_name: int(dir_name[7:])
+        listing = sorted((fn for fn in os.listdir(cfg['main']['data_dir'])
+                          if fn.startswith('datadir')),
+                         key=get_idx)
+        cur_datadir_idx = get_idx(self._db['cur_datadir'])
+        for datadir in u.full_circle(listing, cur_datadir_idx):
             self.update_datadir(datadir)
         
     def update_datadir(self, datadir):
@@ -48,28 +51,31 @@ class Parser():
                 next_vrec_idx = db_dir_entry['last_vrec'] + 1
             else:
                 next_vrec_idx = 0
-            db_dir_entry['cur_section'] = sec.idx
             for i, vrec in enumerate(u.islice_from(sec.video_records,
                                                    next_vrec_idx)):
                 try:
                     extract(datadir, sec, vrec)
                     db_dir_entry['last_vrec'] = next_vrec_idx + i
-                    self.save_db()
+                    db_dir_entry['cur_section'] = sec.idx
+                    self._db['cur_datadir'] = datadir
+                    self._save_db()
                 except FileExistsError as e:
                     LOG.info('File {} exists, will not overwrite'\
                               .format(e.filename))
                     
         LOG.info('Done processing revision {}'.format(idx_file.header.revision))
         db_dir_entry['revision'] = idx_file.header.revision
-        self.save_db()
+        
+        self._save_db()
                     
-    def read_db(self):
+    def _read_db(self):
         fact = lambda: {
                         'revision': 0,
                         'cur_section': 0,
                         'last_vrec': -1,
                         }
-        self._db = {'datadirs': defaultdict(fact)}
+        self._db = {'datadirs': defaultdict(fact),
+                    'cur_datadir': 'datadir0'}
         def obj_hook(d):
             if any(k.startswith('datadir') for k in d.keys()):
                 dd = defaultdict(fact)
@@ -84,6 +90,6 @@ class Parser():
             pass
         LOG.debug('Initialized with db: {}'.format(self._db))
         
-    def save_db(self):
+    def _save_db(self):
         with open(self._dbfile, 'w') as f:
             json.dump(self._db, f)
