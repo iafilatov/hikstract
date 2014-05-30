@@ -26,11 +26,13 @@ class IndexFile:
         if self._sections is None:
             self._sections = []
             cur_sec = CurrentSection.make(self)
+            cur_sec.h_idx_file = self
             cur_idx = cur_sec.idx
             # CurrentSection has ffff in idx field in a vanilla index
             if cur_idx != 0xffff:
                 for idx in range(cur_idx):
                     sec = Section.make(self, idx)
+                    sec.h_idx_file = self
                     self._sections.append(sec)
                 self.sections.append(cur_sec)
         return self._sections
@@ -96,6 +98,7 @@ class Section(Item):
                 if vrec.end_dt == EPOCH:
                     # Record either in progress or not initialized
                     break
+                vrec.section = self
                 self._video_records.append(vrec)
         return self._video_records
         

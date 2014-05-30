@@ -54,7 +54,7 @@ class Parser():
             for i, vrec in enumerate(u.islice_from(sec.video_records,
                                                    next_vrec_idx)):
                 try:
-                    extract(datadir, sec, vrec)
+                    extract(vrec)
                     db_dir_entry['last_vrec'] = next_vrec_idx + i
                     db_dir_entry['cur_section'] = sec.idx
                     self._db['cur_datadir'] = datadir

@@ -7,7 +7,7 @@ import utils as u
 
 LOG = logging.getLogger(__name__)
 
-def extract(datadir, section, video_record):
+def extract(video_record):
     start_dt = video_record.start_dt
     out_dir = os.path.join(cfg['main']['output_dir'],
                            '{:04d}'.format(start_dt.year),
@@ -22,9 +22,9 @@ def extract(datadir, section, video_record):
     # We want FileExistsError propagated
     open(out_fpath, 'x')
     
-    in_fpath = os.path.join(cfg['main']['data_dir'],
-                            datadir,
-                            'hiv{:05d}.mp4'.format(section.idx))
+    h_idx_file = video_record.section.h_idx_file
+    in_fpath = os.path.join(os.path.dirname(h_idx_file.name),
+                            'hiv{:05d}.mp4'.format(video_record.section.idx))
     cmd = ['avconv', '-i', '-']
     cmd.extend(cfg['advanced']['avconv_args'].split())
     cmd.append(out_fpath)
