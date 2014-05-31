@@ -25,7 +25,7 @@ class IndexFile:
     def sections(self):
         if self._sections is None:
             self._sections = []
-            if self.header.total_sec == 1:
+            if self.header.total_sec >= 1:
                 cur_sec = CurrentSection.make(self)
             if self.header.total_sec > 1:
                 for idx in range(self.header.cur_sec_idx):

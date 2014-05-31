@@ -19,7 +19,7 @@ def log_short(s):
 
 
 def log_int(i):
-    '''Return a string representation of s as little-endian unsigned int'''
+    '''Return a string representation of i as little-endian unsigned int'''
     p = struct.pack('<I', i)
     return ''.join('{:02x}'.format(b) for b in p)
     
