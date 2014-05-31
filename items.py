@@ -25,16 +25,15 @@ class IndexFile:
     def sections(self):
         if self._sections is None:
             self._sections = []
-            cur_sec = CurrentSection.make(self)
-            cur_sec.h_idx_file = self
-            cur_idx = cur_sec.idx
-            # CurrentSection has ffff in idx field in a vanilla index
-            if cur_idx != 0xffff:
-                for idx in range(cur_idx):
+            if self.header.total_sec == 1:
+                cur_sec = CurrentSection.make(self)
+                cur_sec.h_idx_file = self
+            if self.header.total_sec > 1:
+                for idx in range(self.header.cur_sec_idx):
                     sec = Section.make(self, idx)
                     sec.h_idx_file = self
                     self._sections.append(sec)
-                self.sections.append(cur_sec)
+            self.sections.append(cur_sec)
         return self._sections
     
     def __getattr__(self, attr):
@@ -63,26 +62,30 @@ class Item:
     
 
 class Header(Item):
-    fmt = '<H 14x'
+    fmt = '<H 14x B 3x B 3x'
     start = 0
-    size = 16
+    size = 24
     max_items = 1
 
-    def __init__(self, h_idx_file, revision, *args, **kwargs):
+    def __init__(self, h_idx_file, revision, total_sec, cur_sec_idx,
+                 *args, **kwargs):
         super().__init__(h_idx_file, *args, **kwargs)
         self.revision = revision
+        self.total_sec = total_sec
+        self.cur_sec_idx = cur_sec_idx
         
         
 class Section(Item):
-    fmt = '<H 6x I I 16x'
+    fmt = '<B 5x B x I I 16x'
     start = 0x500
     size = 32
     max_items = 149
 
-    def __init__(self, h_idx_file, idx, start_ts, end_ts,
+    def __init__(self, h_idx_file, idx, last_vrec_idx, start_ts, end_ts,
                  *args, **kwargs):
         super().__init__(h_idx_file, *args, **kwargs)
         self.idx = idx
+        self.last_vrec_idx = last_vrec_idx
         self.start_dt = dt.utcfromtimestamp(start_ts)
         self.end_dt = dt.utcfromtimestamp(end_ts)
         self._video_records = None
@@ -91,20 +94,17 @@ class Section(Item):
     def video_records(self):
         if self._video_records is None:
             self._video_records = []
-            for idx in range(VideoRecord.max_items):
+            for idx in range(self.last_vrec_idx + 1):
                 start = VideoRecord.start\
                         + VideoRecord.max_items * VideoRecord.size * self.idx
                 vrec = VideoRecord.make(self.h_idx_file, idx, start)
-                if vrec.end_dt == EPOCH:
-                    # Record either in progress or not initialized
-                    break
                 vrec.section = self
                 self._video_records.append(vrec)
         return self._video_records
         
         
 class CurrentSection(Section):
-    fmt = '<H 2x I I 4x'
+    fmt = '<B x B x I I 4x'
     start = 0x30
     size = 16
     max_items = 1
