@@ -33,17 +33,17 @@ class Parser():
         h_idx_path = os.path.join(cfg['main']['data_dir'],
                                   datadir,
                                   cfg['advanced']['h_index_file'])
-        idx_file = items.IndexFile(h_idx_path)
+        h_idx_file = items.IndexFile(h_idx_path)
 
         # Skip if revision has not changed
-        LOG.info('Index revision is {}'.format(idx_file.header.revision))
+        LOG.info('Index revision is {}'.format(h_idx_file.header.revision))
         db_dir_entry = self._db['datadirs'][datadir]
-        if db_dir_entry['revision'] == idx_file.header.revision:
+        if db_dir_entry['revision'] == h_idx_file.header.revision:
             LOG.info('Revision unchanged, nothing to update')
             return
         
         cur_sec_idx = db_dir_entry['cur_section']
-        for sec in u.full_circle(idx_file.sections, cur_sec_idx):
+        for sec in u.full_circle(h_idx_file.sections, cur_sec_idx):
             
             LOG.debug('Entering section {}'.format(sec.idx))
                            
@@ -63,8 +63,9 @@ class Parser():
                     LOG.info('File {} exists, will not overwrite'\
                               .format(e.filename))
                     
-        LOG.info('Done processing revision {}'.format(idx_file.header.revision))
-        db_dir_entry['revision'] = idx_file.header.revision
+        LOG.info('Done processing revision {}'\
+                 .format(h_idx_file.header.revision))
+        db_dir_entry['revision'] = h_idx_file.header.revision
         
         self._save_db()
                     

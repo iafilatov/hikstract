@@ -7,8 +7,8 @@ import utils as u
 
 LOG = logging.getLogger(__name__)
 
-def extract(video_record):
-    start_dt = video_record.start_dt
+def extract(vrec):
+    start_dt = vrec.start_dt
     out_dir = os.path.join(cfg['main']['output_dir'],
                            '{:04d}'.format(start_dt.year),
                            '{:02d}'.format(start_dt.month),
@@ -22,9 +22,8 @@ def extract(video_record):
     # We want FileExistsError propagated
     open(out_fpath, 'x')
     
-    h_idx_file = video_record.section.h_idx_file
-    in_fpath = os.path.join(os.path.dirname(h_idx_file.name),
-                            'hiv{:05d}.mp4'.format(video_record.section.idx))
+    in_fpath = os.path.join(os.path.dirname(vrec.h_idx_file.name),
+                            'hiv{:05d}.mp4'.format(vrec.section.idx))
     cmd = ['avconv', '-i', '-']
     cmd.extend(cfg['advanced']['avconv_args'].split())
     cmd.append(out_fpath)
@@ -32,13 +31,13 @@ def extract(video_record):
     LOG.info('Extracting video record from'
              ' {:%Y-%m-%d_%H:%M:%S}'.format(start_dt))
     LOG.debug('Reading from {}, start {}, end {}'\
-              .format(in_fpath, u.log_int(video_record.start_offset),
-                    u.log_int(video_record.start_offset + video_record.length)))
+              .format(in_fpath, u.log_int(vrec.start_offset),
+                      u.log_int(vrec.start_offset + vrec.length)))
     LOG.debug('Starting converter: {}'.format(' '.join(cmd)))
     
     with open(in_fpath, 'rb') as f, sp.Popen(cmd, stdin=sp.PIPE) as p:
-        f.seek(video_record.start_offset)
-        left = video_record.length
+        f.seek(vrec.start_offset)
+        left = vrec.length
         while left > 0:
             buf = f.read(max(1024*1024, left))
             left -= len(buf)

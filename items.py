@@ -27,11 +27,9 @@ class IndexFile:
             self._sections = []
             if self.header.total_sec == 1:
                 cur_sec = CurrentSection.make(self)
-                cur_sec.h_idx_file = self
             if self.header.total_sec > 1:
                 for idx in range(self.header.cur_sec_idx):
                     sec = Section.make(self, idx)
-                    sec.h_idx_file = self
                     self._sections.append(sec)
             self.sections.append(cur_sec)
         return self._sections
