@@ -25,13 +25,13 @@ class IndexFile:
     def sections(self):
         if self._sections is None:
             self._sections = []
-            if self.header.total_sec >= 1:
-                cur_sec = CurrentSection.make(self)
             if self.header.total_sec > 1:
-                for idx in range(self.header.cur_sec_idx):
+                for idx in range(1, self.header.cur_sec_idx):
                     sec = Section.make(self, idx)
                     self._sections.append(sec)
-            self.sections.append(cur_sec)
+            if self.header.total_sec >= 1:
+                cur_sec = CurrentSection.make(self)
+                self.sections.append(cur_sec)
         return self._sections
     
     def __getattr__(self, attr):
