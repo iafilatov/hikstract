@@ -17,8 +17,8 @@ def extract(vrec):
         os.makedirs(out_dir, mode=0o750)
     except FileExistsError:
         pass
-    out_fpath = os.path.join(out_dir,
-                             'rec_{:%Y-%m-%d_%H:%M:%S}.mp4'.format(start_dt))
+    out_fpath = os.path.join(out_dir, 'rec_{:%Y-%m-%d_%H:%M:%S}.mp4'\
+                                      .format(start_dt))
     # We want FileExistsError propagated
     open(out_fpath, 'x')
     
@@ -42,3 +42,16 @@ def extract(vrec):
             buf = f.read(max(1024*1024, left))
             left -= len(buf)
             p.stdin.write(buf)
+            
+    # Create a snapshot
+    ss = cfg['main']['snapshot_seek']
+    if int(ss) > -1:
+        out_fpath_snap = os.path.join(out_dir, 'snap_{:%Y-%m-%d_%H:%M:%S}.png'\
+                                               .format(start_dt))
+        cmd = ['avconv', '-v', 'error',
+                         '-ss', ss,
+                         '-i', out_fpath,
+                         '-frames:v', '1']
+        cmd.append(out_fpath_snap)
+        
+        sp.Popen(cmd).wait()

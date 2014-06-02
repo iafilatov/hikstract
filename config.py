@@ -3,12 +3,15 @@ import configparser
 _CFGFILE = 'config.cfg'
 
 _DEFAULTS = {
-            'advanced': {
-                         'avconv_args': '-c:v copy -v error',
-                         'db_file': 'index.db',
-                         'h_index_file': 'index00.bin',
-                         },
-            }
+             'main': {
+                      'snapshot_seek': '-1',
+                      },
+             'advanced': {
+                          'avconv_args': '-c:v copy -v error',
+                          'db_file': 'index.db',
+                          'h_index_file': 'index00.bin',
+                          },
+             }
 
 _MANDATORY = {
               'main': ('data_dir', 'output_dir'),
@@ -47,6 +50,12 @@ class CFG(configparser.ConfigParser):
                 if k not in self[sec]:
                     raise ConfigError('Parameter `{}` must be present in'
                                       ' section [{}]'.format(k, sec))
+            try:
+                self.getint('main', 'snapshot_seek')
+            except ValueError:
+                raise ConfigError('Parameter `snapshot_seek` must be a positive'
+                                  ' offset in seconds or negative to disable'
+                                  ' taking snapshots')
 
 
 class ConfigError(Exception):
