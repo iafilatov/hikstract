@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 
-
 import logging
 
-
-#from config import cfg, _CFGFILE
+from config import cfg
 from parser import Parser 
 
 
 def run():
-    #cfg._write_file(_CFGFILE)
-    logging.basicConfig(level=logging.DEBUG)
+    if cfg.getboolean('main', 'debug'):
+        level = logging.DEBUG
+    else:
+        level = logging.WARN
+    logging.basicConfig(level=level)
     
     parser = Parser()
     parser.update()
