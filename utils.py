@@ -8,7 +8,9 @@ def islice_from(it, start):
 
 
 def full_circle(it, start):
-    '''Given a sequence 0..start..N, iterate over start..N, then over 0..start'''
+    '''Given a sequence 0..start..N, iterate over start..N,
+    then over 0..start
+    '''
     return chain(islice_from(it, start), islice(it, start))
 
 
@@ -22,4 +24,3 @@ def log_int(i):
     '''Return a string representation of i as little-endian unsigned int'''
     p = struct.pack('<I', i)
     return ''.join('{:02x}'.format(b) for b in p)
-    

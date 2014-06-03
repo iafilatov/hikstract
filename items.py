@@ -14,13 +14,13 @@ class IndexFile:
         self.f = open(path, 'rb')
         self._header = None
         self._sections = None
-               
+
     @property
     def header(self):
         if self._header is None:
             self._header = Header.make(self)
         return self._header
-    
+
     @property
     def sections(self):
         if self._sections is None:
@@ -33,19 +33,19 @@ class IndexFile:
                 cur_sec = CurrentSection.make(self)
                 self.sections.append(cur_sec)
         return self._sections
-    
+
     def __getattr__(self, attr):
         return getattr(self.f, attr)
-    
+
     def __del__(self):
         self.close()
-            
+
 
 class Item:
     def __init__(self, h_idx_file, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.h_idx_file = h_idx_file
-    
+
     @classmethod
     def make(cls, f, idx=0, start=None):
         if start is None:
@@ -57,7 +57,7 @@ class Item:
         buf = f.read(cls.size)
         fields = struct.unpack(cls.fmt, buf)
         return cls(f, *fields)
-    
+
 
 class Header(Item):
     fmt = '<H 14x B 3x B 3x'
@@ -71,8 +71,8 @@ class Header(Item):
         self.revision = revision
         self.total_sec = total_sec
         self.cur_sec_idx = cur_sec_idx
-        
-        
+
+
 class Section(Item):
     fmt = '<B 5x B x I I 16x'
     start = 0x500
@@ -87,34 +87,34 @@ class Section(Item):
         self.start_dt = dt.utcfromtimestamp(start_ts)
         self.end_dt = dt.utcfromtimestamp(end_ts)
         self._video_records = None
-        
+
     @property
     def video_records(self):
         if self._video_records is None:
             self._video_records = []
             for idx in range(self.last_vrec_idx + 1):
-                start = VideoRecord.start\
-                        + VideoRecord.max_items * VideoRecord.size * self.idx
+                start = (VideoRecord.start
+                         + VideoRecord.max_items * VideoRecord.size * self.idx)
                 vrec = VideoRecord.make(self.h_idx_file, idx, start)
                 vrec.section = self
                 self._video_records.append(vrec)
         return self._video_records
-        
-        
+
+
 class CurrentSection(Section):
     fmt = '<B x B x I I 4x'
     start = 0x30
     size = 16
     max_items = 1
-        
+
 
 class Record(Item):
     def __init__(self, h_idx_file, start_offset, end_offset, *args, **kwargs):
         super().__init__(h_idx_file, *args, **kwargs)
         self.start_offset = start_offset
         self.length = end_offset - start_offset
-        
-        
+
+
 class VideoRecord(Record):
     fmt = '8x I 4x I 20x I I 32x'
     start = 0x17a0

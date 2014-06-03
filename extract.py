@@ -5,7 +5,9 @@ import subprocess as sp
 from config import cfg
 import utils as u
 
+
 LOG = logging.getLogger(__name__)
+
 
 def extract(vrec):
     start_dt = vrec.start_dt
@@ -17,24 +19,24 @@ def extract(vrec):
         os.makedirs(out_dir, mode=0o750)
     except FileExistsError:
         pass
-    out_fpath = os.path.join(out_dir, 'rec_{:%Y-%m-%d_%H:%M:%S}.mp4'\
+    out_fpath = os.path.join(out_dir, 'rec_{:%Y-%m-%d_%H:%M:%S}.mp4'
                                       .format(start_dt))
     # We want FileExistsError propagated
     open(out_fpath, 'x')
-    
+
     in_fpath = os.path.join(os.path.dirname(vrec.h_idx_file.name),
                             'hiv{:05d}.mp4'.format(vrec.section.idx))
     cmd = ['avconv', '-i', '-']
     cmd.extend(cfg['advanced']['avconv_args'].split())
     cmd.append(out_fpath)
-    
+
     LOG.info('Extracting video record from'
              ' {:%Y-%m-%d_%H:%M:%S}'.format(start_dt))
-    LOG.debug('Reading from {}, start {}, end {}'\
+    LOG.debug('Reading from {}, start {}, end {}'
               .format(in_fpath, u.log_int(vrec.start_offset),
                       u.log_int(vrec.start_offset + vrec.length)))
     LOG.debug('Starting converter: {}'.format(' '.join(cmd)))
-    
+
     with open(in_fpath, 'rb') as f, sp.Popen(cmd, stdin=sp.PIPE) as p:
         f.seek(vrec.start_offset)
         left = vrec.length
@@ -42,16 +44,19 @@ def extract(vrec):
             buf = f.read(max(1024*1024, left))
             left -= len(buf)
             p.stdin.write(buf)
-            
+
     # Create a snapshot
     ss = cfg['main']['snapshot_seek']
     if int(ss) > -1:
-        out_fpath_snap = os.path.join(out_dir, 'snap_{:%Y-%m-%d_%H:%M:%S}.png'\
+        out_fpath_snap = os.path.join(out_dir, 'snap_{:%Y-%m-%d_%H:%M:%S}.png'
                                                .format(start_dt))
         cmd = ['avconv', '-v', 'error',
                          '-ss', ss,
                          '-i', out_fpath,
                          '-frames:v', '1']
         cmd.append(out_fpath_snap)
-        
+
+        LOG.info('Extracting snapshot from {}'.format(out_fpath_snap))
+        LOG.debug('Starting converter: {}'.format(' '.join(cmd)))
+
         sp.Popen(cmd).wait()

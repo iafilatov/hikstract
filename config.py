@@ -23,24 +23,24 @@ class CFG(configparser.ConfigParser):
         super().__init__(*args, **kwargs)
         self.configure()
         self.validate()
-        
+
     def configure(self, cfgfile=_CFGFILE):
         self._load_defaults()
         self._read_file(cfgfile)
-        
+
     def save(self, cfgfile=_CFGFILE):
         self._write_file(cfgfile)
 
     def _load_defaults(self):
         self.read_dict(_DEFAULTS)
-    
+
     def _read_file(self, cfgfile):
         self.read(cfgfile)
-        
+
     def _write_file(self, cfgfile):
         with open(cfgfile, 'w') as f:
             self.write(f)
-            
+
     def validate(self):
         for sec, keys in _MANDATORY.items():
             if sec not in self:
@@ -53,17 +53,17 @@ class CFG(configparser.ConfigParser):
             try:
                 self.getint('main', 'snapshot_seek')
             except ValueError:
-                raise ConfigError('Parameter `snapshot_seek` must be a positive'
-                                  ' offset in seconds or negative to disable'
-                                  ' taking snapshots')
+                raise ConfigError('Parameter `snapshot_seek` must be a'
+                                  ' positive offset in seconds or negative to'
+                                  ' disable taking snapshots')
 
 
 class ConfigError(Exception):
     def __init__(self, msg):
         self.msg = msg
-    
+
     def __str__(self):
         return self.msg
-                
+
 
 cfg = CFG()
