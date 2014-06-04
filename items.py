@@ -126,3 +126,4 @@ class VideoRecord(Record):
         super().__init__(h_idx_file, *args, **kwargs)
         self.start_dt = dt.utcfromtimestamp(start_dt)
         self.end_dt = dt.utcfromtimestamp(end_dt)
+        self.duration = (self.end_dt - self.start_dt).seconds

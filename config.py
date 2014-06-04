@@ -5,9 +5,15 @@ _CFGFILE = 'config.cfg'
 _DEFAULTS = {
              'main': {
                       'snapshot_seek': '-1',
+                      'converter': '',
+                      'snapshot_format': ''
                       },
              'advanced': {
                           'avconv_args': '-c:v copy -v error',
+                          'avconv_args_snap': '-frames:v 1 -v error',
+                          'ffmpeg_args': '-vcodec copy -v error',
+                          'ffmpeg_args_snap': '-vframes 1 -v error',
+                          'snapshot_pos': 0.5,
                           'db_file': 'index.db',
                           'h_index_file': 'index00.bin',
                           },
@@ -50,12 +56,6 @@ class CFG(configparser.ConfigParser):
                 if k not in self[sec]:
                     raise ConfigError('Parameter `{}` must be present in'
                                       ' section [{}]'.format(k, sec))
-            try:
-                self.getint('main', 'snapshot_seek')
-            except ValueError:
-                raise ConfigError('Parameter `snapshot_seek` must be a'
-                                  ' positive offset in seconds or negative to'
-                                  ' disable taking snapshots')
 
 
 class ConfigError(Exception):
