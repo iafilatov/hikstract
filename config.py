@@ -30,12 +30,11 @@ _MANDATORY = {
 class CFG(configparser.ConfigParser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.configure()
-        self.validate()
 
     def configure(self, cfgfile=_CFGFILE):
         self._load_defaults()
         self._read_file(cfgfile)
+        self.validate()
 
     def save(self, cfgfile=_CFGFILE):
         self._write_file(cfgfile)

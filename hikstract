@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 
 import logging
+import os
 
 from config import cfg
 from parser import Parser 
 
 
 def run():
+    os.chdir(os.path.dirname(__file__))
+    
+    cfg.configure()
     if cfg.getboolean('main', 'debug'):
         level = logging.DEBUG
     else:

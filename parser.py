@@ -13,11 +13,10 @@ LOG = logging.getLogger(__name__)
 
 
 class Parser():
-    _dbfile = cfg['advanced']['db_file']
-    data_root = cfg['main']['data_dir']
-    h_index_fname = cfg['advanced']['h_index_file']
-
     def __init__(self):
+        self._dbfile = cfg['advanced']['db_file']
+        self.data_root = cfg['main']['data_dir']
+        self.h_index_fname = cfg['advanced']['h_index_file']
         self._db = self._read_db()
 
     def update(self):
