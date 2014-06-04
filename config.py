@@ -6,11 +6,14 @@ _DEFAULTS = {
              'main': {
                       'snapshot_seek': '-1',
                       'converter': '',
-                      'snapshot_format': ''
+                      'output_format': 'webm',
+                      'snapshot_format': '',
                       },
              'advanced': {
-                          'avconv_args': '-c:v copy -v error',
-                          'avconv_args_snap': '-frames:v 1 -v error',
+                          'converter_args': ('-c:v libvpx -b:v 2M -crf 10'
+                                             ' -qmin 10 -qmax 42 -cpu-used 5'
+                                             ' -v error'),
+                          'converter_args_snap': '-frames:v 1 -v error',
                           'ffmpeg_args': '-vcodec copy -v error',
                           'ffmpeg_args_snap': '-vframes 1 -v error',
                           'snapshot_pos': 0.5,

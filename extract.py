@@ -1,4 +1,3 @@
-from contextlib import closing
 import logging
 import os
 import subprocess as sp
@@ -21,16 +20,10 @@ def extract(vrec):
         os.makedirs(out_dir, mode=0o750)
     except FileExistsError:
         pass
-    out_fpath = os.path.join(out_dir, 'rec_{}.mp4'.format(start_dt_str))
-    # We want FileExistsError propagated
-    open(out_fpath, 'x')
 
     in_fpath = os.path.join(os.path.dirname(vrec.h_idx_file.name),
                             'hiv{:05d}.mp4'.format(vrec.section.idx))
-    cmd = ['avconv', '-i', '-']
-    cmd.extend(cfg['advanced']['avconv_args'].split())
-    cmd.append(out_fpath)
-    
+
     # Extract video stream
 
     LOG.info('Extracting video record from ' + start_dt_str)
@@ -39,9 +32,17 @@ def extract(vrec):
                       u.log_int(vrec.start_offset + vrec.length)))
 
     converter = cfg['main']['converter']
+    
+    out_fmt = cfg['main']['output_format'] if converter else 'mp4'
+    out_fname = 'rec_{}.{}'.format(start_dt_str, out_fmt)
+    out_fpath = os.path.join(out_dir, out_fname)
+    
+    # We want FileExistsError propagated
+    open(out_fpath, 'x')
+
     if converter:
         cmd = [converter, '-i', '-']
-        cmd.extend(cfg['advanced'][converter + '_args'].split())
+        cmd.extend(cfg['advanced']['converter_args'].split())
         cmd.append(out_fpath)
 
         LOG.debug('Starting converter: {}'.format(' '.join(cmd)))
@@ -67,12 +68,12 @@ def extract(vrec):
     # Create a snapshot
     snap_fmt = cfg['main']['snapshot_format']
     if snap_fmt:
-        out_fpath_snap = os.path.join(out_dir, 'snap_{}.{}'
-                                               .format(start_dt_str, snap_fmt))
+        fname_snap = 'snap_{}.{}'.format(start_dt_str, snap_fmt)
+        out_fpath_snap = os.path.join(out_dir, fname_snap)
         ss = vrec.duration * cfg.getfloat('advanced', 'snapshot_pos')
 
         cmd = [converter, '-ss', str(ss), '-i', out_fpath]
-        cmd.extend(cfg['advanced'][converter + '_args_snap'].split())
+        cmd.extend(cfg['advanced']['converter_args_snap'].split())
         cmd.append(out_fpath_snap)
         
         LOG.info('Extracting snapshot from {}'.format(out_fpath_snap))
