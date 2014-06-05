@@ -32,11 +32,11 @@ def extract(vrec):
                       u.log_int(vrec.start_offset + vrec.length)))
 
     converter = cfg['main']['converter']
-    
+
     out_fmt = cfg['main']['output_format'] if converter else 'mp4'
     out_fname = 'rec_{}.{}'.format(start_dt_str, out_fmt)
     out_fpath = os.path.join(out_dir, out_fname)
-    
+
     # We want FileExistsError propagated
     open(out_fpath, 'x')
 
@@ -61,7 +61,7 @@ def extract(vrec):
         inpt.seek(vrec.start_offset)
         left = vrec.length
         while left > 0:
-            buf = inpt.read(max(1024*1024, left))
+            buf = inpt.read(max(1024 * 1024, left))
             left -= len(buf)
             outpt.write(buf)
 
@@ -75,8 +75,8 @@ def extract(vrec):
         cmd = [converter, '-ss', str(ss), '-i', out_fpath]
         cmd.extend(cfg['advanced']['converter_args_snap'].split())
         cmd.append(out_fpath_snap)
-        
+
         LOG.info('Extracting snapshot from {}'.format(out_fpath_snap))
         LOG.debug('Starting converter: {}'.format(' '.join(cmd)))
-        
+
         sp.Popen(cmd).wait()

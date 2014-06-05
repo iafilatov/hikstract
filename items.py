@@ -2,8 +2,6 @@ from datetime import datetime as dt
 import logging
 import struct
 
-import utils as u
-
 
 LOG = logging.getLogger(__name__)
 EPOCH = dt.utcfromtimestamp(0)
@@ -50,7 +48,7 @@ class Item:
     def make(cls, f, idx=0, start=None):
         if start is None:
             start = cls.start
-        f.seek(start + idx*cls.size)
+        f.seek(start + idx * cls.size)
         LOG.debug('Making {} at {}:{:x}'.format(cls.__name__,
                                                 f.name,
                                                 f.tell()))
