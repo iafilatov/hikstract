@@ -1,9 +1,8 @@
-from collections import defaultdict
-import json
 import logging
 import os
 
 from config import cfg
+from db import DB
 from extract import extract
 import items
 import utils as u
@@ -14,10 +13,9 @@ LOG = logging.getLogger(__name__)
 
 class Parser():
     def __init__(self):
-        self._dbfile = cfg['advanced']['db_file']
         self.data_root = cfg['main']['data_dir']
         self.h_index_fname = cfg['advanced']['h_index_file']
-        self._db = self._read_db()
+        self.db = DB(cfg['advanced']['db_file'])
 
     def update(self):
         get_idx = lambda dname: int(dname[7:])
@@ -25,7 +23,7 @@ class Parser():
         listing = sorted((fn for fn in os.listdir(self.data_root)
                           if fn.startswith('datadir')),
                          key=get_idx)
-        cur_datadir_idx = get_idx(self._db['cur_datadir'])
+        cur_datadir_idx = get_idx(self.db['cur_datadir'])
 
         for datadir in u.full_circle(listing, cur_datadir_idx):
             self.update_datadir(datadir)
@@ -40,7 +38,7 @@ class Parser():
 
         LOG.info('Index revision is {}'.format(h_idx_file_rev))
 
-        db_dir_entry = self._db['datadirs'][datadir]
+        db_dir_entry = self.db['datadirs'][datadir]
 
         # Skip if revision has not changed
         if db_dir_entry['revision'] == h_idx_file_rev:
@@ -63,8 +61,8 @@ class Parser():
                     extract(vrec)
                     db_dir_entry['last_vrec'] = next_vrec_idx + i
                     db_dir_entry['cur_section'] = sec.idx
-                    self._db['cur_datadir'] = datadir
-                    self._save_db()
+                    self.db['cur_datadir'] = datadir
+                    self.db.save()
                 except FileExistsError as e:
                     LOG.info('File {} exists, will not overwrite'
                               .format(e.filename))
@@ -72,38 +70,4 @@ class Parser():
         LOG.info('Done processing revision {}'
                  .format(h_idx_file_rev))
         db_dir_entry['revision'] = h_idx_file_rev
-
-        self._save_db()
-
-    def _read_db(self):
-        fact = lambda: {
-                        'revision': 0,
-                        'cur_section': 0,
-                        'last_vrec': -1,
-                        }
-        db = {'datadirs': defaultdict(fact),
-              'cur_datadir': 'datadir0'}
-
-        def obj_hook(d):
-            if any(k.startswith('datadir') for k in d.keys()):
-                dd = defaultdict(fact)
-                dd.update(d)
-                return dd
-            return d
-
-        try:
-            with open(self._dbfile, 'r') as f:
-                db_data = json.load(f, object_hook=obj_hook)
-            db.update(db_data)
-        except FileNotFoundError:
-            pass
-
-        LOG.debug('Finished reading db: {}'.format(db))
-
-        return db
-
-    def _save_db(self):
-        LOG.debug('Saving db: {}'.format(self._db))
-
-        with open(self._dbfile, 'w') as f:
-            json.dump(self._db, f)
+        self.db.save()
