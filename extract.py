@@ -48,9 +48,14 @@ def extract(vrec):
         LOG.debug('Starting converter: {}'.format(' '.join(cmd)))
 
         def dest_open():
+            # open(out_fpath, 'x') has left a 0-length file which the converter
+            # will likely refuse to clobber, so it should be deleted
+            os.remove(out_fpath)
+
             p = sp.Popen(cmd, stdin=sp.PIPE)
             p.write = p.stdin.write
             return p
+
     else:
         LOG.debug('Saving original stream to {}'.format(out_fpath))
 
