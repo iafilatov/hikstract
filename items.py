@@ -58,15 +58,16 @@ class Item:
 
 
 class Header(Item):
-    fmt = '<H 14x B 3x B 3x'
+    fmt = '<H 10x B 3x B 3x B 3x'
     start = 0
     size = 24
     max_items = 1
 
-    def __init__(self, h_idx_file, revision, total_sec, cur_sec_idx,
-                 *args, **kwargs):
+    def __init__(self, h_idx_file, revision, rec_sec_num, total_sec,
+                 cur_sec_idx, *args, **kwargs):
         super().__init__(h_idx_file, *args, **kwargs)
         self.revision = revision
+        self.rec_sec_num = rec_sec_num
         self.total_sec = total_sec
         self.cur_sec_idx = cur_sec_idx
 
@@ -90,8 +91,10 @@ class Section(Item):
     def video_records(self):
         if self._video_records is None:
             self._video_records = []
+            rec_sec_num = self.h_idx_file.header.rec_sec_num
+            vrecs_start = Section.start + Section.size * rec_sec_num
             for idx in range(self.last_vrec_idx + 1):
-                start = (VideoRecord.start
+                start = (vrecs_start
                          + VideoRecord.max_items * VideoRecord.size * self.idx)
                 vrec = VideoRecord.make(self.h_idx_file, idx, start)
                 vrec.section = self
