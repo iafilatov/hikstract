@@ -2,6 +2,7 @@ import logging
 import os
 
 from config import cfg
+from datetime import datetime
 from db import DB
 from extract import extract
 import items
@@ -57,6 +58,10 @@ class Parser():
 
             next_vrecs = u.islice_from(sec.video_records, next_vrec_idx)
             for i, vrec in enumerate(next_vrecs):
+                if vrec.start_dt == datetime.utcfromtimestamp(0):
+                    LOG.debug('Skipping extraction of incomplete vrec'
+                              'at {}:{:x}'.format(vrec._h_idx_file.name, vrec._pos))
+                    continue
                 try:
                     extract(vrec)
                     db_dir_entry['last_vrec'] = next_vrec_idx + i

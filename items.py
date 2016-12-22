@@ -2,6 +2,8 @@ from datetime import datetime as dt
 import logging
 import struct
 
+import utils as u
+
 
 LOG = logging.getLogger(__name__)
 EPOCH = dt.utcfromtimestamp(0)
@@ -42,19 +44,21 @@ class IndexFile:
 class Item:
     def __init__(self, h_idx_file, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.h_idx_file = h_idx_file
+        self._h_idx_file = h_idx_file
 
     @classmethod
     def make(cls, f, idx=0, start=None):
         if start is None:
             start = cls.start
-        f.seek(start + idx * cls.size)
-        LOG.debug('Making {} at {}:{:x}'.format(cls.__name__,
-                                                f.name,
-                                                f.tell()))
+        pos = start + idx * cls.size
+        f.seek(pos)
+        LOG.debug('Making {} at {}:{:x}'.format(cls.__name__, f.name, pos))
         buf = f.read(cls.size)
         fields = struct.unpack(cls.fmt, buf)
-        return cls(f, *fields)
+        item = cls(f, *fields)
+        item._pos = pos
+        LOG.debug(u.log_item_fields(item))
+        return item
 
 
 class Header(Item):
@@ -91,12 +95,12 @@ class Section(Item):
     def video_records(self):
         if self._video_records is None:
             self._video_records = []
-            rec_sec_num = self.h_idx_file.header.rec_sec_num
+            rec_sec_num = self._h_idx_file.header.rec_sec_num
             vrecs_start = Section.start + Section.size * rec_sec_num
             for idx in range(self.last_vrec_idx + 1):
                 start = (vrecs_start
                          + VideoRecord.max_items * VideoRecord.size * self.idx)
-                vrec = VideoRecord.make(self.h_idx_file, idx, start)
+                vrec = VideoRecord.make(self._h_idx_file, idx, start)
                 vrec.section = self
                 self._video_records.append(vrec)
         return self._video_records

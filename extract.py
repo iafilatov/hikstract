@@ -21,7 +21,7 @@ def extract(vrec):
     except FileExistsError:
         pass
 
-    in_fpath = os.path.join(os.path.dirname(vrec.h_idx_file.name),
+    in_fpath = os.path.join(os.path.dirname(vrec._h_idx_file.name),
                             'hiv{:05d}.mp4'.format(vrec.section.idx))
 
     # Extract video stream

@@ -24,3 +24,10 @@ def log_int(i):
     '''Return a string representation of i as little-endian unsigned int'''
     p = struct.pack('<I', i)
     return ''.join('{:02x}'.format(b) for b in p)
+
+
+def log_item_fields(item):
+    '''Return a string representation of item's fields'''
+    item_vars = sorted(vars(item).items())
+    return ', '.join(k + ': ' + str(v) for k, v in item_vars
+                     if not k.startswith('_'))
