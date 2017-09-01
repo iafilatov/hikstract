@@ -3,16 +3,20 @@ import json
 import logging
 from pprint import pformat
 
-LOG = logging.getLogger(__name__)
+
+logger = logging.getLogger(__name__)
 
 
 def _dct_factoty():
-    return {'revision': 0,
-            'cur_section': 0,
-            'last_vrec': -1}
+    return {
+        'cur_section': 0,
+        'last_vrec': -1,
+        'revision': 0,
+    }
 
 
 class DB():
+
     def __init__(self, db_fpath=None, db_decoder=None, db_encoder=None):
         super().__init__()
 
@@ -32,12 +36,12 @@ class DB():
                 self._reset()
                 self.update(db)
         except (FileNotFoundError, ValueError):
-            LOG.info('Could not load db from {}'.format(self.db_fpath))
+            logger.info('Could not load db from {}'.format(self.db_fpath))
         else:
-            LOG.debug('Finished loading db: {}'.format(self))
+            logger.debug('Finished loading db: {}'.format(self))
 
     def save(self):
-        LOG.debug('Saving db: {}'.format(self))
+        logger.debug('Saving db: {}'.format(self))
 
         with open(self.db_fpath, 'w') as db_file:
             for chunk in self.encoder.iterencode():
@@ -61,6 +65,7 @@ class DB():
 
 
 class DBDecoder(json.JSONDecoder):
+
     def __init__(self, db, *args, **kwargs):
         super().__init__(object_hook=self._object_hook, *args, **kwargs)
         self.db = db
@@ -74,6 +79,7 @@ class DBDecoder(json.JSONDecoder):
 
 
 class DBEncoder(json.JSONEncoder):
+
     def __init__(self, db, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.db = db

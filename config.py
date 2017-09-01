@@ -27,7 +27,8 @@ _MANDATORY = {
               }
 
 
-class CFG(configparser.ConfigParser):
+class Config(configparser.ConfigParser):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -52,15 +53,20 @@ class CFG(configparser.ConfigParser):
     def validate(self):
         for sec, keys in _MANDATORY.items():
             if sec not in self:
-                raise ConfigError('Section [{}] must be present in'
-                                  ' config file'.format(sec))
+                raise ConfigError(
+                    'Section [{}] must be present in config file'
+                    .format(sec)
+                )
             for k in keys:
                 if k not in self[sec]:
-                    raise ConfigError('Parameter `{}` must be present in'
-                                      ' section [{}]'.format(k, sec))
+                    raise ConfigError(
+                        'Parameter `{}` must be present in section [{}]'
+                        .format(k, sec)
+                    )
 
 
 class ConfigError(Exception):
+
     def __init__(self, msg):
         self.msg = msg
 
@@ -68,4 +74,4 @@ class ConfigError(Exception):
         return self.msg
 
 
-cfg = CFG()
+config = Config()

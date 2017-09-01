@@ -2,17 +2,17 @@ import logging
 import os
 import subprocess as sp
 
-from config import cfg
+from config import config
 import utils as u
 
 
-LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def extract(vrec):
     start_dt = vrec.start_dt
     start_dt_str = start_dt.strftime('%Y-%m-%d_%H:%M:%S')
-    out_dir = os.path.join(cfg['main']['output_dir'],
+    out_dir = os.path.join(config['main']['output_dir'],
                            '{:04d}'.format(start_dt.year),
                            '{:02d}'.format(start_dt.month),
                            '{:02d}'.format(start_dt.day))
@@ -26,14 +26,15 @@ def extract(vrec):
 
     # Extract video stream
 
-    LOG.info('Extracting video record from ' + start_dt_str)
-    LOG.debug('Reading from {}, start {}, end {}'
-              .format(in_fpath, u.log_int(vrec.start_offset),
-                      u.log_int(vrec.start_offset + vrec.length)))
+    logger.info('Extracting video record from ' + start_dt_str)
+    logger.debug('Reading from {}, start {}, end {}'
+                 .format(in_fpath,
+                         u.log_int(vrec.start_offset),
+                         u.log_int(vrec.start_offset + vrec.length)))
 
-    converter = cfg['main']['converter']
+    converter = config['main']['converter']
 
-    out_fmt = cfg['main']['output_format'] if converter else 'mp4'
+    out_fmt = config['main']['output_format'] if converter else 'mp4'
     out_fname = 'rec_{}.{}'.format(start_dt_str, out_fmt)
     out_fpath = os.path.join(out_dir, out_fname)
 
@@ -42,10 +43,10 @@ def extract(vrec):
 
     if converter:
         cmd = [converter, '-i', '-']
-        cmd.extend(cfg['advanced']['converter_args'].split())
+        cmd.extend(config['advanced']['converter_args'].split())
         cmd.append(out_fpath)
 
-        LOG.debug('Starting converter: {}'.format(' '.join(cmd)))
+        logger.debug('Starting converter: {}'.format(' '.join(cmd)))
 
         def dest_open():
             # open(out_fpath, 'x') has left a 0-length file which the converter
@@ -57,7 +58,7 @@ def extract(vrec):
             return p
 
     else:
-        LOG.debug('Saving original stream to {}'.format(out_fpath))
+        logger.debug('Saving original stream to {}'.format(out_fpath))
 
         def dest_open():
             return open(out_fpath, 'wb')
@@ -71,17 +72,17 @@ def extract(vrec):
             outpt.write(buf)
 
     # Create a snapshot
-    snap_fmt = cfg['main']['snapshot_format']
+    snap_fmt = config['main']['snapshot_format']
     if snap_fmt:
         fname_snap = 'snap_{}.{}'.format(start_dt_str, snap_fmt)
         out_fpath_snap = os.path.join(out_dir, fname_snap)
-        ss = vrec.duration * cfg.getfloat('advanced', 'snapshot_pos')
+        ss = vrec.duration * config.getfloat('advanced', 'snapshot_pos')
 
         cmd = [converter, '-ss', str(ss), '-i', out_fpath]
-        cmd.extend(cfg['advanced']['converter_args_snap'].split())
+        cmd.extend(config['advanced']['converter_args_snap'].split())
         cmd.append(out_fpath_snap)
 
-        LOG.info('Extracting snapshot from {}'.format(out_fpath_snap))
-        LOG.debug('Starting converter: {}'.format(' '.join(cmd)))
+        logger.info('Extracting snapshot from {}'.format(out_fpath_snap))
+        logger.debug('Starting converter: {}'.format(' '.join(cmd)))
 
         sp.Popen(cmd).wait()

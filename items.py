@@ -5,11 +5,12 @@ import struct
 import utils as u
 
 
-LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 EPOCH = dt.utcfromtimestamp(0)
 
 
 class IndexFile:
+
     def __init__(self, path):
         self.f = open(path, 'rb')
         self._header = None
@@ -52,12 +53,12 @@ class Item:
             start = cls.start
         pos = start + idx * cls.size
         f.seek(pos)
-        LOG.debug('Making {} at {}:{:x}'.format(cls.__name__, f.name, pos))
+        logger.debug('Making {} at {}:{:x}'.format(cls.__name__, f.name, pos))
         buf = f.read(cls.size)
         fields = struct.unpack(cls.fmt, buf)
         item = cls(f, *fields)
         item._pos = pos
-        LOG.debug(u.log_item_fields(item))
+        logger.debug(u.log_item_fields(item))
         return item
 
 

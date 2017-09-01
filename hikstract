@@ -3,15 +3,15 @@
 import logging
 import os
 
-from config import cfg
-from parser import Parser 
+from config import config
+from parser import Parser
 
 
 def run():
     os.chdir(os.path.dirname(__file__))
-    
-    cfg.configure()
-    if cfg.getboolean('main', 'debug'):
+
+    config.configure()
+    if config.getboolean('main', 'debug'):
         level = logging.DEBUG
     else:
         level = logging.WARN
@@ -19,7 +19,7 @@ def run():
     log_fmt = '%(asctime)s [%(process)d] %(levelname)s: %(message)s'
 
     logging.basicConfig(format=log_fmt, level=level)
-    
+
     parser = Parser()
     parser.update()
 
