@@ -1,9 +1,10 @@
 import logging
 import os
-import subprocess as sp
+
+import utils as u
 
 from config import config
-import utils as u
+from transcode import run_transcoder
 
 
 logger = logging.getLogger(__name__)
@@ -41,26 +42,22 @@ def extract(vrec):
     # We want FileExistsError propagated
     open(out_fpath, 'x')
 
+    # open(out_fpath, 'x') has left a 0-length file which the converter
+    # will likely refuse to clobber, so it should be deleted
+    os.remove(out_fpath)
+
     if converter:
-        cmd = [converter, '-i', '-']
-        cmd.extend(config['advanced']['converter_args'].split())
-        cmd.append(out_fpath)
-
-        logger.debug('Starting converter: {}'.format(' '.join(cmd)))
-
         def dest_open():
-            # open(out_fpath, 'x') has left a 0-length file which the converter
-            # will likely refuse to clobber, so it should be deleted
-            os.remove(out_fpath)
-
-            p = sp.Popen(cmd, stdin=sp.PIPE)
-            p.write = p.stdin.write
-            return p
+            converter_args = config['advanced']['converter_args'].split()
+            return run_transcoder(
+                '-', out_fpath,
+                converter=converter,
+                additional_flags=converter_args,
+            )
 
     else:
-        logger.debug('Saving original stream to {}'.format(out_fpath))
-
         def dest_open():
+            logger.debug('Saving original stream to {}'.format(out_fpath))
             return open(out_fpath, 'wb')
 
     with open(in_fpath, 'rb') as inpt, dest_open() as outpt:
@@ -78,11 +75,14 @@ def extract(vrec):
         out_fpath_snap = os.path.join(out_dir, fname_snap)
         ss = vrec.duration * config.getfloat('advanced', 'snapshot_pos')
 
-        cmd = [converter, '-ss', str(ss), '-i', out_fpath]
-        cmd.extend(config['advanced']['converter_args_snap'].split())
-        cmd.append(out_fpath_snap)
+        logger.info('Extracting snapshot from {}'.format(out_fpath))
 
-        logger.info('Extracting snapshot from {}'.format(out_fpath_snap))
-        logger.debug('Starting converter: {}'.format(' '.join(cmd)))
-
-        sp.Popen(cmd).wait()
+        converter_args = config['advanced']['converter_args_snap'].split()
+        converter_args += ['-ss', str(ss)]
+        with run_transcoder(
+            out_fpath, out_fpath_snap,
+            converter=converter,
+            additional_flags=converter_args
+        ):
+            # Will wait on transcoder before exiting the context.
+            pass
