@@ -1,10 +1,13 @@
 import logging
 import os
 
-import utils as u
+from shutil import copyfile
+from tempfile import NamedTemporaryFile
+
 
 from config import config
-from transcode import run_transcoder
+from transcode import transcode
+from utils import log_int
 
 
 logger = logging.getLogger(__name__)
@@ -24,17 +27,7 @@ def extract(vrec):
 
     in_fpath = os.path.join(os.path.dirname(vrec._h_idx_file.name),
                             'hiv{:05d}.mp4'.format(vrec.section.idx))
-
-    # Extract video stream
-
-    logger.info('Extracting video record from ' + start_dt_str)
-    logger.debug('Reading from {}, start {}, end {}'
-                 .format(in_fpath,
-                         u.log_int(vrec.start_offset),
-                         u.log_int(vrec.start_offset + vrec.length)))
-
     converter = config['main']['converter']
-
     out_fmt = config['main']['output_format'] if converter else 'mp4'
     out_fname = 'rec_{}.{}'.format(start_dt_str, out_fmt)
     out_fpath = os.path.join(out_dir, out_fname)
@@ -46,27 +39,40 @@ def extract(vrec):
     # will likely refuse to clobber, so it should be deleted
     os.remove(out_fpath)
 
-    if converter:
-        def dest_open():
-            converter_args = config['advanced']['converter_args'].split()
-            return run_transcoder(
-                '-', out_fpath,
-                converter=converter,
-                additional_flags=converter_args,
-            )
+    # Create a temp file with just the portion of the stream we need
+    with NamedTemporaryFile() as temp:
+        with open(in_fpath, 'rb') as inpt:
+            inpt.seek(vrec.start_offset)
+            left = vrec.length
+            while left > 0:
+                buf = inpt.read(max(16 * 1024, left))
+                left -= len(buf)
+                temp.write(buf)
 
-    else:
-        def dest_open():
+        temp.flush()
+        temp_fpath = temp.name
+
+        if config.getboolean('main', 'analyze_motion'):
+            from motion import has_motion
+            if not has_motion(temp_fpath):
+                logger.info('No motion detected in {}, skipping'
+                            .format(temp_fpath))
+                return
+
+        logger.info('Extracting video record from ' + start_dt_str)
+        logger.debug('Reading from {}, start {}, end {}'
+                     .format(in_fpath,
+                             log_int(vrec.start_offset),
+                             log_int(vrec.start_offset + vrec.length)))
+
+        if converter:
+            xcoder_args = config['advanced']['converter_args'].split()
+            transcode(temp_fpath, out_fpath,
+                      converter=converter,
+                      additional_flags=xcoder_args)
+        else:
             logger.debug('Saving original stream to {}'.format(out_fpath))
-            return open(out_fpath, 'wb')
-
-    with open(in_fpath, 'rb') as inpt, dest_open() as outpt:
-        inpt.seek(vrec.start_offset)
-        left = vrec.length
-        while left > 0:
-            buf = inpt.read(max(1024 * 1024, left))
-            left -= len(buf)
-            outpt.write(buf)
+            copyfile(temp_fpath, out_fpath)
 
     # Create a snapshot
     snap_fmt = config['main']['snapshot_format']
@@ -77,12 +83,8 @@ def extract(vrec):
 
         logger.info('Extracting snapshot from {}'.format(out_fpath))
 
-        converter_args = config['advanced']['converter_args_snap'].split()
-        converter_args += ['-ss', str(ss)]
-        with run_transcoder(
-            out_fpath, out_fpath_snap,
-            converter=converter,
-            additional_flags=converter_args
-        ):
-            # Will wait on transcoder before exiting the context.
-            pass
+        xcoder_args = config['advanced']['converter_args_snap'].split()
+        xcoder_args += ['-ss', str(ss)]
+        transcode(out_fpath, out_fpath_snap,
+                  converter=converter,
+                  additional_flags=xcoder_args)

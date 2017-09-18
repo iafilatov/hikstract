@@ -32,3 +32,11 @@ def log_item_fields(item):
     item_vars = sorted(vars(item).items())
     return ', '.join(k + ': ' + str(v) for k, v in item_vars
                      if not k.startswith('_'))
+
+
+def first(it):
+    """Return first item from collection or iterable"""
+    try:
+        return next(islice(it, 1))
+    except StopIteration:
+        return

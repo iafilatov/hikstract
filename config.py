@@ -64,6 +64,13 @@ class Config(configparser.ConfigParser):
                         .format(k, sec)
                     )
 
+        if self.getboolean('main', 'analyze_motion'):
+            try:
+                import cv2  # noqa
+                import numpy  # noqa
+            except ImportError:
+                raise Exception('analyze_motion requires OpenVC and numpy')
+
 
 class ConfigError(Exception):
 

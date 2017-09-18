@@ -8,7 +8,8 @@ logger = logging.getLogger(__name__)
 
 
 @contextmanager
-def run_transcoder(input, output, converter='ffmpeg', additional_flags=None):
+def open_transcoder(input, output, converter='ffmpeg', additional_flags=None,
+                    terminate=False):
     cmd_in, proc_in = _get_io_args(input)
     cmd_out, proc_out = _get_io_args(output)
 
@@ -19,9 +20,21 @@ def run_transcoder(input, output, converter='ffmpeg', additional_flags=None):
         # Give it file-like read and write methods.
         if xcoder.stdin:
             xcoder.write = xcoder.stdin.write
-        if xcoder.stderr:
-            xcoder.read = xcoder.stderr.read
-        yield xcoder
+        if xcoder.stdout:
+            xcoder.read = xcoder.stdout.read
+
+        try:
+            yield xcoder
+        finally:
+            if terminate:
+                logger.debug('Stopping converter')
+                xcoder.terminate()
+
+
+def transcode(*args, **kwargs):
+    with open_transcoder(*args, **kwargs):
+        # Will wait on transcoder before exiting the context.
+        pass
 
 
 def _get_io_args(obj):
