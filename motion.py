@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 def has_motion(fpath):
     """
     Returns True if motion is detected on video at fpath. Tries to find
-    contours of movin objects and assumes there is motion if a large enough
+    contours of moving objects and assumes there is motion if a large enough
     contour exitsts long enough without interruption.
     """
     fgbg = cv2.createBackgroundSubtractorKNN(dist2Threshold=1024,
@@ -39,7 +39,7 @@ def has_motion(fpath):
 
 
 def raw_transcoder(input, output):
-    """Transcode to width 640 grayscale (8 bpp)."""
+    """Transcode to 640x480 RGB (24 bpp)."""
     xcoder_args = '''
         -v error
         -f rawvideo
