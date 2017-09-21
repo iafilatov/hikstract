@@ -13,7 +13,8 @@ def open_transcoder(input, output, converter='ffmpeg', additional_flags=None,
     cmd_in, proc_in = _get_io_args(input)
     cmd_out, proc_out = _get_io_args(output)
 
-    cmd = [converter, '-i', cmd_in] + (additional_flags or []) + [cmd_out]
+    flags = additional_flags or []
+    cmd = [converter, '-nostdin', '-i', cmd_in] + flags + [cmd_out]
     logger.debug('Starting converter: {}'.format(' '.join(cmd)))
 
     with Popen(cmd, stdin=proc_in, stdout=proc_out) as xcoder:
