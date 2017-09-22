@@ -31,13 +31,14 @@ def extract(vrec):
     out_fmt = config['main']['output_format'] if converter else 'mp4'
     out_fname = 'rec_{}.{}'.format(start_dt_str, out_fmt)
     out_fpath = os.path.join(out_dir, out_fname)
+    out_fpath_skip = out_fpath + '.skip'
 
-    # We want FileExistsError propagated
-    open(out_fpath, 'x')
-
-    # open(out_fpath, 'x') has left a 0-length file which the converter
-    # will likely refuse to clobber, so it should be deleted
-    os.remove(out_fpath)
+    # We want FileExistsError propagated.
+    # open(fpath, 'x') leaves a 0-length file which should be deleted before
+    # we start extraction.
+    for fpath in (out_fpath, out_fpath_skip):
+        open(fpath, 'x')
+        os.remove(fpath)
 
     # Create a temp file with just the portion of the stream we need
     with NamedTemporaryFile() as temp:
@@ -57,6 +58,7 @@ def extract(vrec):
             if not has_motion(temp_fpath):
                 logger.info('No motion detected in {}, skipping'
                             .format(temp_fpath))
+                open(out_fpath_skip, 'x')
                 return
 
         logger.info('Extracting video record from ' + start_dt_str)
