@@ -1,12 +1,12 @@
 import logging
 import os
 
-from config import config
 from datetime import datetime
-from db import DB
-from extract import extract
+
 import items
 import utils as u
+
+from extract import extract
 
 
 logger = logging.getLogger(__name__)
@@ -14,10 +14,10 @@ logger = logging.getLogger(__name__)
 
 class Parser():
 
-    def __init__(self):
-        self.data_root = config['main']['data_dir']
-        self.h_index_fname = config['advanced']['h_index_file']
-        self.db = DB(config['advanced']['db_file'])
+    def __init__(self, data_root, h_index_fname, db):
+        self.data_root = data_root
+        self.h_index_fname = h_index_fname
+        self.db = db
 
     def update(self):
         def get_idx(dir):
